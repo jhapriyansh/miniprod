@@ -2,4 +2,4 @@
 *.tfstate
 *.tfstate.*
 *.bak
-*.log
+ansible/roles/k3s_server/*

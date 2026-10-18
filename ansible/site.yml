@@ -2,3 +2,8 @@
   roles:
     - hardening
     - node_exporter
+    - k3s_prereqs
+
+- hosts: server
+  roles:
+    -k3s_server

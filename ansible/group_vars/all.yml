@@ -1,0 +1,4 @@
+k3s_version: "v1.37.1+k3s1"
+k3s_artifact_base: "http://10.95.18.1:8000"
+k3s_binary_sha256: "92b94582eb7b34a8cf532e6006842b9ed215a6783cf56a3dd6271fd35243b2c0"
+k3s_airgap_sha256: "865b2a63ad7a63fc0db17b7fc2985bf4ae11d5ae93ca1472be6218d20aeb6b23"

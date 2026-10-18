@@ -1,0 +1,75 @@
+# roles/k3s_prereqs/tasks/main.yml
+
+- name: Load kernel modules now
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: [br_netfilter, overlay]
+
+- name: Load kernel modules on every boot
+  copy:
+    dest: /etc/modules-load.d/k3s.conf
+    content: |
+      br_netfilter
+      overlay
+    mode: "0644"
+
+- name: Kernel networking settings
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/99-k3s.conf
+    state: present
+    reload: true
+  loop:
+    - { name: net.ipv4.ip_forward, value: 1 }   # IP forwarding
+    - { name: net.bridge.bridge-nf-call-iptables, value: 1 }   # bridge traffic through iptables (v4)
+    - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }   # bridge traffic through iptables (v6)
+
+- name: Allow k3s node-to-node ports from the bridge subnet
+  ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    src: 10.95.18.0/24
+  loop:
+    - { port: 6443, proto: tcp }    # API server
+    - { port: 10250, proto: tcp }    # kubelet
+    - { port: 8472, proto: udp }    # flannel VXLAN
+
+- name: Allow pod and service networks
+  ufw:
+    rule: allow
+    src: "{{ item }}"
+  loop:
+    - 10.42.0.0/16
+    - 10.43.0.0/16
+
+- name: Create k3s directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /var/lib/rancher/k3s/agent/images
+    - /usr/local/share/k3s
+
+- name: Fetch the k3s binary
+  get_url:
+    url: "{{ k3s_artifact_base }}/k3s"
+    dest: /usr/local/bin/k3s
+    checksum: "sha256:{{ k3s_binary_sha256 }}"
+    mode: "0755"
+
+- name: Fetch the air-gap images
+  get_url:
+    url: "{{ k3s_artifact_base }}/k3s-airgap-images-amd64.tar.zst"
+    dest: /var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar.zst
+    checksum: "sha256:{{ k3s_airgap_sha256 }}"
+    mode: "0644"
+
+- name: Fetch the install script
+  get_url:
+    url: "{{ k3s_artifact_base }}/install.sh"
+    dest: /usr/local/share/k3s/install.sh
+    mode: "0755"
