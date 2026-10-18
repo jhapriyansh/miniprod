@@ -1,0 +1,30 @@
+- name: Create the k3s config directory
+  file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: "0755"
+
+- name: Get the join token from the server
+  slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  delegate_to: "{{ groups['server'][0] }}"
+  register: k3s_token
+  no_log: true
+
+- name: Write the k3s agent config
+  template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    mode: "0600"
+  no_log: true
+  notify: restart k3s agent
+
+- name: Install the k3s agent service
+  command: /usr/local/share/k3s/install.sh agent
+  environment:
+    INSTALL_K3S_SKIP_DOWNLOAD: "true"
+  args:
+    creates: /etc/systemd/system/k3s-agent.service
+
+- name: Apply config changes now
+  meta: flush_handlers

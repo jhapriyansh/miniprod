@@ -1,0 +1,7 @@
+node-ip: {{ ansible_host }}
+disable:
+  - traefik
+  - servicelb
+  - metrics-server
+node-taint:
+  - "dedicated=control-plane:NoSchedule"

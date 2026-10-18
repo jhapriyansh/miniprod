@@ -1,0 +1,36 @@
+- name: Create the k3s config directory
+  file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: "0755"
+
+- name: Write the k3s server config
+  template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    mode: "0600"
+  notify: restart k3s
+
+- name: Install the k3s server service
+  command: /usr/local/share/k3s/install.sh
+  environment:
+    INSTALL_K3S_SKIP_DOWNLOAD: "true"
+  args:
+    creates: /etc/systemd/system/k3s.service
+
+- name: Apply config changes now
+  meta: flush_handlers
+
+- name: Wait for the node to be Ready
+  command: k3s kubectl get nodes --no-headers
+  register: nodes
+  until: "' Ready' in nodes.stdout"
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Read the join token
+  slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+  no_log: true

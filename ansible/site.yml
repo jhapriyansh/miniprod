@@ -6,4 +6,8 @@
 
 - hosts: server
   roles:
-    -k3s_server
+    - k3s_server
+
+- hosts: agents
+  roles:
+    - k3s_agent
