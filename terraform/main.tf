@@ -17,9 +17,9 @@ provider "incus" {
 locals {
 	vms = {
 		cp = { ip = "10.95.18.210", memory = "1536MiB", cpu = "2" }
-		w1 = { ip = "10.95.18.211", memory = "768MiB", cpu = "1" }
-		w2 = { ip = "10.95.18.212", memory = "768MiB", cpu = "1" }
-		w3 = { ip = "10.95.18.213", memory = "768MiB", cpu = "1" }
+		w1 = { ip = "10.95.18.211", memory = "1024MiB", cpu = "1" }
+		w2 = { ip = "10.95.18.212", memory = "1024MiB", cpu = "1" }
+		w3 = { ip = "10.95.18.213", memory = "1024MiB", cpu = "1" }
 	}
 }
 

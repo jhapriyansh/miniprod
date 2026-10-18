@@ -1,4 +1,15 @@
 - hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to come up
+      wait_for_connection:
+        timeout: 300
+
+    - name: Wait for first-boot setup to finish
+      command: cloud-init status --wait
+      changed_when: false
+
+- hosts: all
   roles:
     - hardening
     - node_exporter
