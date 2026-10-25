@@ -3,3 +3,4 @@
 *.tfstate.*
 *.bak
 ansible/k3s.yaml
+before_start
