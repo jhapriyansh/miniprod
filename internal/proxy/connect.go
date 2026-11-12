@@ -11,7 +11,7 @@ import (
 var ErrUnavailable = errors.New("no backend reachable")
 
 // maxDialAttempts is the first dial plus one retry.
-const maxDialAttempts = 2
+const MaxDialAttempts = 2
 
 // PickFunc chooses a backend address, skipping any addresses in skip.
 type PickFunc func(skip map[string]bool) (string, error)

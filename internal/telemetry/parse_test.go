@@ -67,21 +67,21 @@ func TestParse(t *testing.T) {
 			line:    "v=1 id=web-abc seq=1 conns=0 rps=+Inf",
 			wantErr: true,
 		},
-		        {
-           		 name:    "missing version is an error",
-           		 line:    "id=web-abc seq=1 conns=0 rps=0.0",
-           		 wantErr: true,
-       		 },
-       		 {
-           		 name:    "non-numeric conns is rejected",
-           		 line:    "v=1 id=web-abc seq=1 conns=x rps=0.0",
-           		 wantErr: true,
-       		 },
-		 {
-           		 name:    "non-numeric seq is rejected",
-           		 line:    "v=1 id=web-abc seq=x conns=0 rps=0.0",
-           		 wantErr: true,
-       		 },
+		{
+			name:    "missing version is an error",
+			line:    "id=web-abc seq=1 conns=0 rps=0.0",
+			wantErr: true,
+		},
+		{
+			name:    "non-numeric conns is rejected",
+			line:    "v=1 id=web-abc seq=1 conns=x rps=0.0",
+			wantErr: true,
+		},
+		{
+			name:    "non-numeric seq is rejected",
+			line:    "v=1 id=web-abc seq=x conns=0 rps=0.0",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

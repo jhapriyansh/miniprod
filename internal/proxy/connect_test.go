@@ -81,7 +81,7 @@ func TestConnect(t *testing.T) {
 			}
 			d := &fakeDialer{refuse: refuse}
 
-			conn, addr, err := Connect(fakePick(tc.backends...), d.Dial, maxDialAttempts)
+			conn, addr, err := Connect(fakePick(tc.backends...), d.Dial, MaxDialAttempts)
 			if conn != nil {
 				defer conn.Close()
 			}
