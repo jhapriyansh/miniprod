@@ -1,9 +1,9 @@
 package proxy
 
 import (
-    "errors"
-    "fmt"
-    "net"
+	"errors"
+	"fmt"
+	"net"
 )
 
 // ErrUnavailable means every attempt to reach a backend was refused.
@@ -23,25 +23,25 @@ type Dialer func(addr string) (net.Conn, error)
 // different backend, up to maxAttempts dials in total. Only the dial is
 // retried: once a connection exists, the proxy never tries again.
 func Connect(pick PickFunc, dial Dialer, maxAttempts int) (net.Conn, string, error) {
-    skip := make(map[string]bool)
-    var lastErr error
+	skip := make(map[string]bool)
+	var lastErr error
 
-    for attempt := 0; attempt < maxAttempts; attempt++ {
-        addr, err := pick(skip)
-        if err != nil {
-            // No backend left to try. The caller maps this to a 503 too.
-            return nil, "", err
-        }
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		addr, err := pick(skip)
+		if err != nil {
+			// No backend left to try. The caller maps this to a 503 too.
+			return nil, "", err
+		}
 
-        conn, err := dial(addr)
-        if err == nil {
-            return conn, addr, nil
-        }
+		conn, err := dial(addr)
+		if err == nil {
+			return conn, addr, nil
+		}
 
-        // Don't pick the same refused backend again on the retry.
-        skip[addr] = true
-        lastErr = err
-    }
+		// Don't pick the same refused backend again on the retry.
+		skip[addr] = true
+		lastErr = err
+	}
 
-    return nil, "", fmt.Errorf("%w: last error: %v", ErrUnavailable, lastErr)
+	return nil, "", fmt.Errorf("%w: last error: %v", ErrUnavailable, lastErr)
 }
