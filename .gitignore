@@ -6,3 +6,4 @@ ansible/k3s.yaml
 before_start
 .DS_Store
 balancer
+dist/

@@ -22,3 +22,7 @@
 - hosts: agents
   roles:
     - k3s_agent
+
+- hosts: server
+  roles:
+    - balancer
