@@ -9,37 +9,46 @@ import (
 // The proxy turns this into an HTTP 503.
 var ErrNoHealthy = errors.New("no healthy backends")
 
-// Pick returns the ID of the Healthy backend with the fewest active
-// connections. Ties go to the lowest ID. Backends listed in skip are
-// never returned. It returns ErrNoHealthy if no backend qualifies.
-func Pick(entries map[string]Entry, skip map[string]bool) (string, error) {
-	// Map iteration order is random. Sorting the IDs makes ties deterministic.
+// Pick returns the Healthy backend with the fewest active connections.
+// Among equal counts, it rotates: it starts after the key returned last
+// time, so sequential requests spread across equal backends instead of
+// always landing on the lowest key. Backends in skip are never returned.
+// last is the key returned by the previous call, or "" for the first call.
+func Pick(entries map[string]Entry, skip map[string]bool, last string) (string, error) {
 	ids := make([]string, 0, len(entries))
 	for id := range entries {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
 
-	var best string
-	var bestActive int
-	found := false
-
+	// Build the candidate list in sorted order, with the state and skip checks applied.
+	var cands []string
 	for _, id := range ids {
-		if skip[id] {
+		if skip[id] || entries[id].State != Healthy {
 			continue
 		}
-		e := entries[id]
-		if e.State != Healthy {
-			continue
-		}
-		// Strict "<" keeps the first (lowest) ID on a tie.
-		if !found || e.Active < bestActive {
-			best, bestActive, found = id, e.Active, true
+		cands = append(cands, id)
+	}
+	if len(cands) == 0 {
+		return "", ErrNoHealthy
+	}
+
+	// Start scanning just after last, so ties rotate from there.
+	start := 0
+	for i, id := range cands {
+		if id > last {
+			start = i
+			break
 		}
 	}
 
-	if !found {
-		return "", ErrNoHealthy
+	best := cands[start]
+	bestActive := entries[best].Active
+	for k := 1; k < len(cands); k++ {
+		id := cands[(start+k)%len(cands)]
+		if a := entries[id].Active; a < bestActive {
+			best, bestActive = id, a
+		}
 	}
 	return best, nil
 }
