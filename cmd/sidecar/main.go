@@ -69,6 +69,17 @@ func poll(c *http.Client, url string) (int, uint64, error) {
 	return parseStub(string(body))
 }
 
+// appHealthy is the v2 gate: true only when the app answers 200 within the
+// client's timeout. A frozen worker fails this, so the sidecar stops beating.
+func appHealthy(client *http.Client, url string) bool {
+	resp, err := client.Get(url)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
 func getenv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
@@ -84,6 +95,7 @@ func main() {
 		log.Fatal("POD_NAME, POD_IP and BALANCER_ADDR are required")
 	}
 	statusURL := getenv("STATUS_URL", "http://127.0.0.1:8081/stub_status")
+	appURL := getenv("APP_URL", "http://127.0.0.1:8080/")
 	addr := net.JoinHostPort(podIP, "8080")
 
 	conn, err := net.Dial("udp", balancer)
@@ -92,6 +104,7 @@ func main() {
 	}
 
 	client := &http.Client{Timeout: 500 * time.Millisecond}
+	probeClient := &http.Client{Timeout: 1 * time.Second}
 	ticker := time.NewTicker(time.Second)
 
 	var seq, lastReq uint64
@@ -99,8 +112,6 @@ func main() {
 	for now := range ticker.C {
 		seq++
 
-		// Shallow v1: a failed poll still sends a beat with zeros. A frozen
-		// nginx therefore looks healthy, which is the gray failure to measure.
 		active, reqs, err := poll(client, statusURL)
 		rps := 0.0
 		if err != nil {
@@ -114,6 +125,12 @@ func main() {
 		}
 		lastAt = now
 
+		// v2: beat only when the app itself answers. A frozen worker
+		// stops the beats, so the balancer's silence detection takes over.
+		if !appHealthy(probeClient, appURL) {
+			log.Printf("app probe failed, no beat sent")
+			continue
+		}
 		fmt.Fprintf(conn, "v=1 id=%s addr=%s seq=%d conns=%d rps=%.2f",
 			pod, addr, seq, active, rps)
 	}
