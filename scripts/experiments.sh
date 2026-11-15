@@ -6,7 +6,7 @@ set -u
 
 MODE=${1:-}
 DELL=trexible@trexible.local
-TARGET_POD=web-7df4dbcfb8-f5n6v   # update to a live pod (kubectl get pods)
+TARGET_POD=web-78d68bd9f7-bv5wc   # live v2 pod
 TARGET_VM=w2
 LOG=/tmp/exp-${MODE:-none}-$(date +%Y%m%d-%H%M%S).log
 LOADPID=
