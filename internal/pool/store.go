@@ -1,6 +1,7 @@
 package pool
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -26,15 +27,23 @@ func (s *Store) Beat(addr string, now time.Time) {
 	if !ok {
 		e = Entry{State: Suspect}
 	}
-	s.entries[addr] = OnBeat(e, now, s.params)
+	next := OnBeat(e, now, s.params)
+	if next.State != e.State {
+		log.Printf("transition %s: %s -> %s", addr, e.State, next.State)
+	}
+	s.entries[addr] = next
 }
 
-// Tick runs the silence check for every known backend.
+// Tick runs the silence check for every known backend and logs state changes.
 func (s *Store) Tick(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for addr, e := range s.entries {
-		s.entries[addr] = OnTick(e, now, s.params)
+		next := OnTick(e, now, s.params)
+		if next.State != e.State {
+			log.Printf("transition %s: %s -> %s (silent %v)", addr, e.State, next.State, now.Sub(e.LastSeen))
+		}
+		s.entries[addr] = next
 	}
 }
 
